@@ -1,0 +1,39 @@
+<!-- static/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>WebRTC DTLS Example</title>
+</head>
+<body>
+  <h2>受信中の映像：</h2>
+  <video id="video" autoplay="true" playsinline="true" controls="true"></video>
+
+  <script>
+    const pc = new RTCPeerConnection();
+
+    pc.ontrack = (event) => {
+      console.log("ontrack", event);
+      document.getElementById('video').srcObject = event.streams[0];
+    };
+
+    async function start() {
+      pc.addTransceiver('video', { direction: 'recvonly' });
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const res = await fetch('/offer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(pc.localDescription)
+      });
+
+      const answer = await res.json();
+      console.log(answer);
+      await pc.setRemoteDescription(answer);
+    }
+
+    start();
+  </script>
+</body>
+</html>
